@@ -105,11 +105,13 @@ class Node:
         self.accel = [0, 0] # [x_acceleration, y_acceleration]
         self.velo = [0, 0] # [x_velocity, y_velocity]
 
-    def update(self, max_x, max_y, x_useable, y_useable, x_coord_buffer, y_coord_buffer, node_rad):
+    def update(self, max_x, max_y,
+               x_useable, y_useable, x_coord_buffer, y_coord_buffer,
+               node_rad, wind_force):
         self.calc_coord()
         self.draw_node(max_x, max_y, x_useable, y_useable, x_coord_buffer, y_coord_buffer, node_rad)
 
-        self.calc_force()
+        self.calc_force(wind_force)
 
     def calc_velo(self):
         pass
