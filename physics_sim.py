@@ -6,7 +6,7 @@ import pygame
 pygame.init()
 
 SCREEN_WIDTH = 1200
-SCREEN_HEIGHT = 880
+SCREEN_HEIGHT = 600
 
 win = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
 pygame.display.set_caption("Cloth Sim")
@@ -76,7 +76,8 @@ class Controller:
         for node in self.nodes:
             node.update(self.stat_points_dist, self.str_max_len * (self.num_nodes[1] - 1),
                         self.x_useable, self.y_useable, self.x_coord_buffer, self.y_coord_buffer,
-                        self.node_rad)
+                        self.node_rad,
+                        self.wind_force)
 
     def __str__(self):
         string = ""
@@ -108,16 +109,19 @@ class Node:
         self.calc_coord()
         self.draw_node(max_x, max_y, x_useable, y_useable, x_coord_buffer, y_coord_buffer, node_rad)
 
+        self.calc_force()
+
+    def calc_velo(self):
+        pass
+
     def calc_coord(self):
         pass
 
-    def calc_force(self):
-        pass
+    def calc_force(self, wind_force):
+        force = []
+        force.append()
 
     def calc_accel(self):
-        pass
-
-    def calc_velo(self):
         pass
 
     def draw_node(self, max_x, max_y,
