@@ -22,12 +22,14 @@ class Controller:
 
         self.stat_points_dist = 12 # float
         self.str_max_len = 5 # float
+        self.spring_constant = 10 # float
 
         self.node_mass = 0.05
         self.node_rad = 5
 
         self.grav_field_strength = 9.8 # float
         self.wind_force = [0, 0] # [x_force, y_force]
+        self.wind_variation = 5 # float
 
         self.x_percent_takeover = 0.6
         self.y_percent_takeover = 0.6
@@ -78,6 +80,9 @@ class Controller:
                         self.x_useable, self.y_useable, self.x_coord_buffer, self.y_coord_buffer,
                         self.node_rad,
                         self.wind_force)
+            
+    def adjust_wind():
+        pass
 
     def __str__(self):
         string = ""
@@ -119,9 +124,9 @@ class Node:
     def calc_coord(self):
         pass
 
-    def calc_force(self, wind_force):
-        force = []
-        force.append()
+    def calc_force(self, wind_force, grav_force):
+        force = grav_force
+        #force[0] += 
 
     def calc_accel(self):
         pass
@@ -144,7 +149,7 @@ class Connection:
         self.node = nodes # [id, id]
 
         self.coord = coords # [[fr_x, fr_y], [end_x, end_y]]
-        self.force = [0, 0] # [x_force, y_force]
+        self.force = [[0, 0], [0, 0]] # [x_force, y_force]
 
     def update(self, max_len):
         pass
