@@ -1,6 +1,8 @@
 """ Cloth Sim """
 
 import math
+import random
+from copy import deepcopy
 import pygame
 
 pygame.init()
@@ -27,9 +29,10 @@ class Controller:
         self.node_mass = 0.05
         self.node_rad = 5
 
-        self.grav_field_strength = 9.8 # float
-        self.wind_force = [0, 0] # [x_force, y_force]
-        self.wind_variation = 5 # float
+        self.grav_force = [0, -9.8] # float
+        self.wind_force = [5, 5] # [x_force, y_force]
+        #self.wind_cycle = 5 # float (s)
+        self.wind_ferocity = 3 # float 0 -> 1
 
         self.x_percent_takeover = 0.6
         self.y_percent_takeover = 0.6
@@ -64,7 +67,7 @@ class Controller:
                 y_coord = i * self.str_max_len
 
                 self.nodes.append(
-                    Node(node_id, connections, [x_coord, y_coord], self.grav_field_strength))
+                    Node(node_id, connections, [x_coord, y_coord]))
 
                 if j != self.num_nodes[0] - 1:
                     self.x_facing_connections.append(
@@ -75,14 +78,23 @@ class Controller:
                         Connection(y_connection, y_conn_nodes, [[None, None], [None, None]]))
 
     def update(self, frame_time):
+        current_wind = self.adjust_wind(frame_time)
+
+        # Draw nodes to the screen
         for node in self.nodes:
             node.update(self.stat_points_dist, self.str_max_len * (self.num_nodes[1] - 1),
                         self.x_useable, self.y_useable, self.x_coord_buffer, self.y_coord_buffer,
                         self.node_rad,
-                        self.wind_force)
-            
-    def adjust_wind():
-        pass
+                        [self.grav_force[0] + current_wind[0],
+                         self.grav_force[1] + current_wind[1]])
+
+    def adjust_wind(self, frame_time):
+        current_wind = deepcopy(self.wind_force)
+
+        current_wind[0] *= random.random()**self.wind_ferocity
+        current_wind[1] *= random.random()**self.wind_ferocity
+
+        return current_wind
 
     def __str__(self):
         string = ""
@@ -101,22 +113,21 @@ class Controller:
         return string
 
 class Node:
-    def __init__(self, id_, connections, coords, grav):
+    def __init__(self, id_, connections, coords):
         self.id_ = id_ # [x/y facing, id]
         self.conn = connections # [id, id, id, id]
 
         self.coord = coords # [x, y]
-        self.const_force = [0, -grav] # [x_force, y_force]
         self.accel = [0, 0] # [x_acceleration, y_acceleration]
         self.velo = [0, 0] # [x_velocity, y_velocity]
 
     def update(self, max_x, max_y,
                x_useable, y_useable, x_coord_buffer, y_coord_buffer,
-               node_rad, wind_force):
+               node_rad, current_force):
         self.calc_coord()
         self.draw_node(max_x, max_y, x_useable, y_useable, x_coord_buffer, y_coord_buffer, node_rad)
 
-        self.calc_force(wind_force)
+        self.calc_force(current_force)
 
     def calc_velo(self):
         pass
@@ -124,9 +135,22 @@ class Node:
     def calc_coord(self):
         pass
 
-    def calc_force(self, wind_force, grav_force):
-        force = grav_force
-        #force[0] += 
+    def calc_force(self, current_force):
+        for connection in controller.x_facing_connections:
+            if connection.node[0] == self.id_:
+                current_force[0] += connection.force[0][0]
+                current_force[1] += connection.force[0][1]
+            elif connection.node[1] == self.id_:
+                current_force[0] += connection.force[1][0]
+                current_force[1] += connection.force[1][1]
+
+        for connection in controller.y_facing_connections:
+            if connection.node[0] == self.id_:
+                current_force[0] += connection.force[0][0]
+                current_force[1] += connection.force[0][1]
+            elif connection.node[1] == self.id_:
+                current_force[0] += connection.force[1][0]
+                current_force[1] += connection.force[1][1]
 
     def calc_accel(self):
         pass
@@ -149,7 +173,7 @@ class Connection:
         self.node = nodes # [id, id]
 
         self.coord = coords # [[fr_x, fr_y], [end_x, end_y]]
-        self.force = [[0, 0], [0, 0]] # [x_force, y_force]
+        self.force = [[0, 0], [0, 0]] # [[fr_x_force, fr_y_force], [end_x_force, end_y_force]]
 
     def update(self, max_len):
         pass
@@ -157,12 +181,20 @@ class Connection:
     def get_coords(self):
         pass
 
-    def check_len(self, max_len):
-        if math.sqrt((self.coord[0][1] - self.coord[1][1])**2 + (
-            self.coord[0][1] - self.coord[1][1])**2) <= max_len:
-            return True
+    def calc_forces(self, max_len, spring_constant):
+        spring_force = self.calc_spring_force(max_len, spring_constant)
+        change_x = self.coord[0][0] - self.coord[1][0]
+        change_y = self.coord[0][1] - self.coord[1][1]
+        x_spring_force = spring_force / math.sqrt((change_y / change_x)**2 + 1)
+        y_spring_force = x_spring_force * (change_y / change_x)
 
-        return False
+    def calc_spring_force(self, max_len, spring_contant):
+        extension = self.get_len() - max_len
+        return spring_contant * extension
+
+    def get_len(self):
+        return math.sqrt((self.coord[0][1] - self.coord[1][1])**2 + (
+            self.coord[0][1] - self.coord[1][1])**2)
 
     def __str__(self):
         return f"id: {self.id_}, nodes: {self.node}"
@@ -189,6 +221,18 @@ class Main:
                     self.run = False
 
         pygame.quit()
+
+def calc():
+    coord = [[1,1], [5,2]]
+    spring_force = 5
+    change_x = coord[0][0] - coord[1][0]
+    change_y = coord[0][1] - coord[1][1]
+    x_spring_force = spring_force / math.sqrt((change_y / change_x)**2 + 1)
+    y_spring_force = x_spring_force * (change_y / change_x)
+    print(x_spring_force)
+    print(y_spring_force)
+
+calc()
 
 main = Main()
 controller = Controller()
